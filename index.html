@@ -143,6 +143,28 @@ label.f input:focus,label.f select:focus{border-color:var(--green-d)}
 canvas{width:100%;height:170px;display:block;border-radius:10px;background:var(--card2)}
 .tip{font-size:12px;color:var(--dim2);margin-top:6px;text-align:center}
 
+/* 食堂推荐 */
+.sug{border:1px solid #2b4a33;background:linear-gradient(160deg,#13251a 0%,#161b22 60%)}
+.sug .sub{font-size:13px;color:var(--dim);margin:-4px 0 10px}
+.sug .sub b{color:var(--green);font-weight:700}
+.sug .chips{margin-bottom:2px}
+.more{width:100%;margin-top:9px;padding:9px;border-radius:10px;background:#1a2530;border:1px solid #2b3a47;color:var(--dim);font-size:13px}
+.more:active{background:#202c38}
+.hint b{color:var(--txt)}
+.set{background:#0f1620;border:1px solid #23303c;border-radius:12px;padding:11px;margin-bottom:8px}
+.set:last-child{margin-bottom:0}
+.set .no{font-size:11px;color:var(--dim2);margin-bottom:5px}
+.set .items{font-size:14.5px;line-height:1.65}
+.set .items b{color:#fff;font-weight:600}
+.set .items span{color:var(--dim2);font-size:12px}
+.set .foot{display:flex;justify-content:space-between;align-items:center;margin-top:9px;gap:10px}
+.set .kk{font-size:13px;color:var(--amber);font-weight:700;font-variant-numeric:tabular-nums}
+.set .kk i{font-style:normal;color:var(--dim2);font-weight:400;font-size:11.5px;margin-left:6px}
+.set .use{padding:7px 14px;border-radius:9px;background:var(--green-d);color:#fff;font-size:13px;font-weight:600}
+.set .use:active{filter:brightness(.9)}
+.set.best{border-color:#2f6b40;box-shadow:0 0 0 1px #2f6b40 inset}
+.tagbest{display:inline-block;font-size:10px;padding:2px 6px;border-radius:99px;background:var(--green-d);color:#fff;margin-left:6px;vertical-align:1px}
+
 /* 提示条 */
 .toast{
   position:fixed;left:50%;bottom:calc(84px + var(--safe-b));transform:translateX(-50%) translateY(10px);
@@ -152,6 +174,15 @@ canvas{width:100%;height:170px;display:block;border-radius:10px;background:var(-
 .toast.on{opacity:1;transform:translateX(-50%)}
 .hint{font-size:12px;color:var(--dim2);line-height:1.6;margin-top:8px}
 .warn{background:#241d10;border:1px solid #3d3117;color:#e3b341;padding:9px 11px;border-radius:10px;font-size:12.5px;margin-top:10px}
+
+/* ============ 宽屏：内容收成一条，别拉满整块显示器 ============ */
+@media (min-width:700px){
+  :root{--col:640px}
+  main{max-width:var(--col);margin:0 auto}
+  .hero{padding-left:calc(50vw - 320px);padding-right:calc(50vw - 320px)}
+  nav{padding-left:calc(50vw - 320px);padding-right:calc(50vw - 320px)}
+  .sheet .panel{max-width:var(--col);margin:0 auto}
+}
 </style>
 </head>
 <body>
@@ -176,6 +207,13 @@ canvas{width:100%;height:170px;display:block;border-radius:10px;background:var(-
 <main>
   <!-- ===== 记录 ===== -->
   <section class="tab on" id="tab-log">
+    <div class="card sug" id="sug-card">
+      <h3>🍽 这顿吃什么 <em id="sug-meal">—</em></h3>
+      <div class="chips" id="sug-meals"></div>
+      <div class="sub" id="sug-info">—</div>
+      <div id="sug-list"></div>
+      <button class="more" id="sug-more" onclick="shuffleSuggest()">🔄 换一批</button>
+    </div>
     <div id="meals"></div>
     <div class="card">
       <h3>今日运动</h3>
@@ -206,12 +244,18 @@ canvas{width:100%;height:170px;display:block;border-radius:10px;background:var(-
     </div>
   </section>
 
-  <!-- ===== 食物库 ===== -->
+  <!-- ===== 吃什么 ===== -->
   <section class="tab" id="tab-food">
+    <div class="card sug">
+      <h3>🍽 今天这样吃 <em id="plan-total">—</em></h3>
+      <div class="sub" id="plan-info">—</div>
+      <div id="plan-list"></div>
+    </div>
     <div class="card">
-      <div class="search"><input id="fq" placeholder="搜索食物…" oninput="renderFoods()"></div>
-      <div class="chips" id="fchips"></div>
-      <div class="flist" id="flist"></div>
+      <h3>食堂速查</h3>
+      <div class="chips" id="ct-chips"></div>
+      <div class="hint">按打饭窗口的一份算，不用称重 · 点一下记到 <b id="quick-meal">—</b></div>
+      <div class="flist" id="ct-list"></div>
       <button class="add" onclick="openCustom()">＋ 添加自定义食物</button>
     </div>
   </section>
@@ -278,7 +322,7 @@ canvas{width:100%;height:170px;display:block;border-radius:10px;background:var(-
 <nav>
   <button class="on" data-tab="log"  onclick="go('log')"><span class="ic">🍚</span>记录</button>
   <button data-tab="body" onclick="go('body')"><span class="ic">📈</span>体重</button>
-  <button data-tab="food" onclick="go('food')"><span class="ic">🥗</span>食物库</button>
+  <button data-tab="food" onclick="go('food')"><span class="ic">🍽</span>吃什么</button>
   <button data-tab="set"  onclick="go('set')"><span class="ic">⚙️</span>设置</button>
 </nav>
 
@@ -513,7 +557,7 @@ function bmiLabel(v){
 /* =========================================================
    渲染
    ========================================================= */
-function renderAll(){ renderHero(); renderMeals(); renderExercise(); renderBody(); renderSettings(); }
+function renderAll(){ renderHero(); renderSuggest(); renderDayPlan(); renderQuickPick(); renderMeals(); renderExercise(); renderBody(); renderSettings(); }
 
 /* ---- 顶部 ---- */
 function renderHero(){
@@ -543,6 +587,347 @@ function renderHero(){
   document.getElementById('b3').style.width = p3+'%';
 }
 
+/* =========================================================
+   大学食堂推荐
+   热量按「一份 / 一个 / 一碗」计 —— 食堂打饭不会去称重，
+   所以直接用现实份量，比每 100g 更贴近实际。
+   ========================================================= */
+const CANTEEN = {
+  breakfast: {
+    /* 主食：包子、馒头、粥、饼 */
+    staple: [
+      {n:'肉包',k:230,u:'1个'},      {n:'菜包',k:180,u:'1个'},
+      {n:'豆沙包',k:200,u:'1个'},    {n:'馒头',k:220,u:'1个'},
+      {n:'花卷',k:200,u:'1个'},      {n:'小笼包',k:300,u:'1笼6个'},
+      {n:'蒸饺',k:200,u:'1笼4个'},   {n:'烧麦',k:100,u:'2个'},
+      {n:'油条',k:270,u:'1根'},      {n:'煎饼果子',k:400,u:'1个'},
+      {n:'鸡蛋灌饼',k:350,u:'1个'},  {n:'手抓饼',k:330,u:'1个'},
+      {n:'白粥',k:110,u:'1碗'},      {n:'小米粥',k:130,u:'1碗'},
+      {n:'皮蛋瘦肉粥',k:200,u:'1碗'},{n:'豆腐脑',k:130,u:'1碗'},
+      {n:'鸡蛋面',k:350,u:'1碗'},    {n:'玉米',k:130,u:'1根'},
+      {n:'蒸红薯',k:120,u:'1个'},    {n:'全麦面包',k:160,u:'2片'}
+    ],
+    /* 蛋、奶、豆浆 */
+    protein: [
+      {n:'白煮蛋',k:75,u:'1个'},     {n:'茶叶蛋',k:75,u:'1个'},
+      {n:'煎蛋',k:110,u:'1个'},      {n:'纯牛奶',k:160,u:'1盒'},
+      {n:'无糖豆浆',k:90,u:'1杯'},   {n:'甜豆浆',k:150,u:'1杯'},
+      {n:'酸奶',k:130,u:'1杯'},      {n:'酱牛肉',k:90,u:'2片'}
+    ]
+  },
+  main: {
+    /* 要配菜的主食 */
+    plain: [
+      {n:'米饭（小碗）',k:180,u:'1碗'}, {n:'米饭（标准）',k:260,u:'1碗'},
+      {n:'米饭（大碗）',k:350,u:'1碗'}, {n:'馒头',k:220,u:'1个'},
+      {n:'花卷',k:200,u:'1个'},         {n:'杂粮饭',k:230,u:'1碗'}
+    ],
+    /* 一份就是一顿：面、粉、炒饭、砂锅 */
+    solo: [
+      {n:'牛肉拉面',k:480,u:'1碗'},     {n:'刀削面',k:450,u:'1碗'},
+      {n:'砂锅面',k:520,u:'1份'},       {n:'米粉/米线',k:420,u:'1碗'},
+      {n:'螺蛳粉',k:500,u:'1碗'},       {n:'酸辣粉',k:400,u:'1碗'},
+      {n:'馄饨',k:300,u:'1碗'},         {n:'猪肉白菜水饺',k:450,u:'12个'},
+      {n:'蛋炒饭',k:550,u:'1份'},       {n:'炒面',k:600,u:'1份'},
+      {n:'炒河粉',k:580,u:'1份'},       {n:'黄焖鸡米饭',k:700,u:'1份'},
+      {n:'青椒肉丝盖饭',k:650,u:'1份'}, {n:'麻辣烫（素为主）',k:400,u:'1份'}
+    ],
+    /* 荤菜 */
+    meat: [
+      {n:'红烧肉',k:380,u:'1份'},     {n:'红烧排骨',k:360,u:'1份'},
+      {n:'糖醋里脊',k:350,u:'1份'},   {n:'回锅肉',k:350,u:'1份'},
+      {n:'宫保鸡丁',k:280,u:'1份'},   {n:'鱼香肉丝',k:300,u:'1份'},
+      {n:'青椒肉丝',k:260,u:'1份'},   {n:'农家小炒肉',k:320,u:'1份'},
+      {n:'红烧鸡腿',k:250,u:'1份'},   {n:'卤鸡腿',k:200,u:'1个'},
+      {n:'炸鸡排',k:400,u:'1份'},     {n:'土豆烧牛肉',k:280,u:'1份'},
+      {n:'番茄牛腩',k:260,u:'1份'},   {n:'可乐鸡翅',k:300,u:'1份'},
+      {n:'咖喱鸡块',k:300,u:'1份'},   {n:'清蒸鱼',k:180,u:'1份'},
+      {n:'红烧鱼块',k:250,u:'1份'},   {n:'酸菜鱼',k:300,u:'1份'},
+      {n:'麻婆豆腐',k:200,u:'1份'},   {n:'西红柿炒蛋',k:180,u:'1份'},
+      {n:'韭菜炒蛋',k:190,u:'1份'},   {n:'香肠',k:180,u:'1根'},
+      {n:'卤蛋',k:75,u:'1个'}
+    ],
+    /* 素菜 */
+    veg: [
+      {n:'清炒时蔬',k:65,u:'1份'},   {n:'蒜蓉西兰花',k:90,u:'1份'},
+      {n:'手撕包菜',k:90,u:'1份'},   {n:'炒土豆丝',k:150,u:'1份'},
+      {n:'烧茄子',k:180,u:'1份'},    {n:'地三鲜',k:220,u:'1份'},
+      {n:'炒豆芽',k:70,u:'1份'},     {n:'炒白菜',k:60,u:'1份'},
+      {n:'凉拌黄瓜',k:50,u:'1份'},   {n:'干煸豆角',k:160,u:'1份'},
+      {n:'麻酱拌菜',k:120,u:'1份'},  {n:'炒藕片',k:120,u:'1份'},
+      {n:'木耳炒山药',k:130,u:'1份'},{n:'拌木耳',k:60,u:'1份'},
+      {n:'炒西葫芦',k:70,u:'1份'}
+    ],
+    soup: [
+      {n:'免费例汤',k:30,u:'1碗'},   {n:'紫菜蛋花汤',k:50,u:'1碗'},
+      {n:'西红柿蛋汤',k:60,u:'1碗'}, {n:'冬瓜汤',k:40,u:'1碗'},
+      {n:'玉米排骨汤',k:150,u:'1碗'},{n:'酸辣汤',k:80,u:'1碗'}
+    ]
+  },
+  /* 加餐：小卖部、水果店买得到的 */
+  snack: [
+    {n:'酸奶',k:130,u:'1杯'},       {n:'苹果',k:100,u:'1个'},
+    {n:'香蕉',k:110,u:'1根'},       {n:'橘子',k:60,u:'1个'},
+    {n:'圣女果',k:40,u:'1小盒'},    {n:'白煮蛋',k:75,u:'1个'},
+    {n:'纯牛奶',k:160,u:'1盒'},     {n:'无糖豆浆',k:90,u:'1杯'},
+    {n:'混合坚果',k:170,u:'1小包'}, {n:'玉米',k:130,u:'1根'},
+    {n:'烤肠',k:180,u:'1根'},       {n:'全麦面包',k:160,u:'2片'}
+  ]
+};
+const MEALNAME = {breakfast:'早餐', lunch:'午餐', dinner:'晚餐', snack:'加餐'};
+
+/* 现在该吃哪一顿 */
+function currentMeal(){
+  const h = new Date().getHours();
+  if (h < 10) return 'breakfast';
+  if (h < 14) return 'lunch';
+  if (h < 17) return 'snack';
+  return 'dinner';
+}
+
+/* 三餐配额比例（加起来是 1），全天安排和单餐额度共用 */
+const MEAL_SHARE = {breakfast:0.26, lunch:0.38, dinner:0.30, snack:0.06};
+
+/* 今天还没吃掉的额度（含运动补回来的） */
+function mealRemain(){
+  const g = goalIntake(DB.profile);
+  const d = day();
+  let intake = 0;
+  MEALS.forEach(m => (d[m.k]||[]).forEach(x => intake += x.kcal));
+  return g + (d.ex||[]).reduce((s,x)=>s+x.kcal,0) - intake;
+}
+
+/* 这一顿还能吃多少：本餐配额减去已记的，再受「今日剩余」约束 */
+function mealBudget(mealKey){
+  const g = goalIntake(DB.profile);
+  const share = MEAL_SHARE[mealKey] || 0.25;
+  const eaten = (day()[mealKey]||[]).reduce((s,x)=>s+x.kcal,0);
+  return Math.max(0, Math.min(g*share - eaten, mealRemain()));
+}
+
+/* 生成候选组合：一荤一饭 / 一荤一素一饭 / 两素一饭 / 单品一份 */
+function suggestSets(mealKey, budget){
+  const out = [];
+  if (mealKey === 'breakfast'){
+    for (const a of CANTEEN.breakfast.staple)
+      for (const b of CANTEEN.breakfast.protein)
+        out.push({items:[a,b], veg:false});
+  } else if (mealKey === 'snack'){
+    const S = CANTEEN.snack;
+    for (const a of S) out.push({items:[a], veg:false});
+    for (let i=0;i<S.length;i++)
+      for (let j=i+1;j<S.length;j++)
+        if (S[i].k + S[j].k <= 320) out.push({items:[S[i],S[j]], veg:false});
+  } else {
+    const M = CANTEEN.main;
+    for (const a of M.plain){
+      for (const b of M.meat){
+        out.push({items:[a,b], veg:false});                          // 一荤一饭
+        for (const c of M.veg) out.push({items:[a,b,c], veg:true});  // 一荤一素一饭
+      }
+      for (const c of M.veg) out.push({items:[a,c], veg:true});      // 两素一饭
+    }
+    for (const b of M.meat)
+      for (const c of M.veg) out.push({items:[b,c], veg:true});      // 不要主食
+    for (const a of M.solo){
+      out.push({items:[a], veg:false});                              // 单品一份
+      for (const c of M.veg) out.push({items:[a,c], veg:true});      // 单品＋一份素菜
+    }
+  }
+  out.forEach(s => {
+    s.kcal  = s.items.reduce((t,x)=>t+x.k, 0);
+    /* 带蔬菜的轻微优先：一样贴近预算时，先推有菜的那份 */
+    s.score = Math.abs(s.kcal - budget) + (s.veg ? 0 : 25);
+  });
+  out.sort((x,y) => x.score - y.score);
+
+  /* 打头两样相同的组合只留最贴近预算的那一种配法，
+     否则三个方案容易全是米饭配红烧肉、只是旁边素菜换了个名字 */
+  const seen = new Set(), uniq = [];
+  for (const s of out){
+    const key = s.items.length + ':' + s.items.slice(0,2).map(x=>x.n).join('｜');
+    if (seen.has(key)) continue;
+    seen.add(key); uniq.push(s);
+  }
+  return uniq;
+}
+
+/* 只在最贴近预算的一小撮候选里挑，保证方案之间主食、荤菜不重样 */
+const SUG_POOL = 24;
+function pickDiverse(sorted, n, offset){
+  const size = Math.min(SUG_POOL, sorted.length);
+  const pool = sorted.slice(0, size);
+  const k    = (offset || 0) % size;
+  const ring = pool.slice(k).concat(pool.slice(0, k));   // 「换一批」＝ 在池子里挪个起点
+
+  const picked = [], usedA = new Set(), usedB = new Set();
+  for (const s of ring){
+    if (picked.length >= n) break;
+    const a = s.items[0].n, b = s.items[1] ? s.items[1].n : '';
+    if (usedA.has(a)) continue;
+    if (b && usedB.has(b)) continue;
+    picked.push(s); usedA.add(a); if (b) usedB.add(b);
+  }
+  for (const s of ring){ if (picked.length >= n) break; if (!picked.includes(s)) picked.push(s); }
+  return picked;
+}
+
+/* ---- 推荐卡片（记录页顶部）---- */
+let sugCache = [];
+let sugPick  = null;   // 手动指定的餐次；null = 按当前时间自动
+let sugShift = 0;      // 「换一批」的起点偏移
+
+function activeMeal(){ return sugPick || currentMeal(); }
+function setSugMeal(k){ sugPick = k; sugShift = 0; renderSuggest(); renderDayPlan(); renderQuickPick(); }
+function shuffleSuggest(){ sugShift += 3; renderSuggest(); }
+
+function renderSuggest(){
+  const mealKey = activeMeal();
+  const budget  = mealBudget(mealKey);
+  const box     = document.getElementById('sug-list');
+  const info    = document.getElementById('sug-info');
+  const more    = document.getElementById('sug-more');
+
+  document.getElementById('sug-meal').textContent = MEALNAME[mealKey];
+  document.getElementById('sug-meals').innerHTML = MEALS.map(m =>
+    `<button class="${m.k===mealKey?'on':''}" onclick="setSugMeal('${m.k}')">${m.ic} ${m.n}</button>`).join('');
+
+  const eaten = (day()[mealKey]||[]).reduce((s,x)=>s+x.kcal,0);
+  if (budget < 60){
+    info.textContent = mealRemain() < 60
+      ? '今天的额度已经用完'
+      : `${MEALNAME[mealKey]}已经记了 ${Math.round(eaten)} kcal，够了`;
+    box.innerHTML = '<div class="empty">这顿不用再加 —— 真要补就挑清淡的：'
+      + '凉拌黄瓜 / 炒青菜 / 一个白煮蛋，或者喝点水。</div>';
+    more.style.display = 'none';
+    sugCache = [];
+    return;
+  }
+  more.style.display = '';
+
+  const sets = pickDiverse(suggestSets(mealKey, budget), 3, sugShift);
+  sugCache = sets;
+  info.innerHTML = `这顿还能吃 <b>${Math.round(budget)} kcal</b>`
+    + (eaten ? `（${MEALNAME[mealKey]}已记 ${Math.round(eaten)}）` : '')
+    + (mealKey === 'breakfast' ? '　·　主食 ＋ 蛋／奶'
+      : mealKey === 'snack'    ? '' : '　·　一荤一素一碗饭');
+
+  box.innerHTML = sets.map((s,i)=>{
+    const diff = Math.round(s.kcal - budget);
+    const fit  = (i === 0 && Math.abs(diff) <= budget*0.2) ? '<span class="tagbest">最合适</span>' : '';
+    const items = s.items.map(it =>
+      `<b>${esc(it.n)}</b>${it.u ? `<span> ${it.u}</span>` : ''}`
+    ).join(' ＋ ');
+    return `<div class="set${i===0?' best':''}">
+      <div class="no">方案 ${i+1}${fit}</div>
+      <div class="items">${items}</div>
+      <div class="foot">
+        <span class="kk">≈ ${s.kcal} kcal<i>${diff>=0?'+':''}${diff}</i></span>
+        <button class="use" onclick="applySet(${i})">记下这个</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* 一键把整个方案记进当前餐 */
+function applySet(i){
+  const s = sugCache[i];
+  if (!s) return;
+  const mealKey = activeMeal();
+  s.items.forEach(it => day()[mealKey].push({name:it.n, unit:it.u, amt:1, per:1, kcal:it.k}));
+  save(); renderAll();
+  toast(`已记下 ${s.items.length} 样 · ${s.kcal} kcal`);
+}
+
+/* =========================================================
+   吃什么页：全天安排 ＋ 食堂速查
+   ========================================================= */
+let planCache = [];
+function renderDayPlan(){
+  const g = goalIntake(DB.profile);
+  const d = day();
+  planCache = [];
+  let total = 0;
+
+  const rows = MEALS.map(m => {
+    const eaten = (d[m.k]||[]).reduce((s,x)=>s+x.kcal,0);
+    const quota = Math.round(g * (MEAL_SHARE[m.k] || 0.25));
+    const left  = quota - eaten;
+    const set   = left >= 60 ? pickDiverse(suggestSets(m.k, left), 1, 0)[0] : null;
+    planCache.push({meal:m.k, set});
+    const head = `<div class="no">${m.ic} ${m.n}　配额 ${quota} kcal`
+      + (eaten ? `　已记 ${Math.round(eaten)}` : '') + '</div>';
+    if (!set){
+      total += Math.max(0, eaten);
+      return `<div class="set">${head}
+        <div class="items"><span>这顿的额度已经记满了</span></div>
+      </div>`;
+    }
+    total += eaten + set.kcal;
+    const items = set.items.map(it => `<b>${esc(it.n)}</b>`).join(' ＋ ');
+    return `<div class="set">${head}
+      <div class="items">${items}<span> ≈ ${set.kcal} kcal</span></div>
+      <div class="foot">
+        <span class="kk">这顿合计 ${Math.round(eaten + set.kcal)} kcal</span>
+        <button class="use" onclick="applyPlan(${planCache.length-1})">记下这顿</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('plan-list').innerHTML = rows;
+  document.getElementById('plan-total').textContent = `${Math.round(g)} kcal / 天`;
+  const diff = Math.round(total - g);
+  document.getElementById('plan-info').innerHTML =
+    `四顿都照这样吃约 <b>${Math.round(total)} kcal</b>，目标 ${Math.round(g)}（${diff>=0?'+':''}${diff}）`
+    + (diff > 120 ? '　·　偏多了，主食打小碗、少点油炸的' : '');
+}
+function applyPlan(i){
+  const p = planCache[i];
+  if (!p || !p.set) return;
+  p.set.items.forEach(it => day()[p.meal].push({name:it.n, unit:it.u, amt:1, per:1, kcal:it.k}));
+  save(); renderAll();
+  toast(`已记到${MEALNAME[p.meal]} · ${p.set.kcal} kcal`);
+}
+
+/* 食堂速查：按打饭窗口分类，点一下直接记到当前餐次 */
+const CT_GROUPS = [
+  {k:'早餐主食',   key:['breakfast','staple']},
+  {k:'蛋奶豆浆',   key:['breakfast','protein']},
+  {k:'主食',       key:['main','plain']},
+  {k:'面条米粉',   key:['main','solo']},
+  {k:'荤菜',       key:['main','meat']},
+  {k:'素菜',       key:['main','veg']},
+  {k:'汤',         key:['main','soup']},
+  {k:'加餐',       key:['snack']}
+];
+let ctCat = '荤菜';
+function ctItems(key){ return key.length === 1 ? CANTEEN[key[0]] : CANTEEN[key[0]][key[1]]; }
+function ctFind(name){
+  for (const g of CT_GROUPS){
+    const it = ctItems(g.key).find(x => x.n === name);
+    if (it) return it;
+  }
+  return null;
+}
+function renderQuickPick(){
+  document.getElementById('ct-chips').innerHTML = CT_GROUPS.map(g =>
+    `<button class="${g.k===ctCat?'on':''}" onclick="ctCat='${g.k}';renderQuickPick()">${g.k}</button>`).join('');
+  document.getElementById('quick-meal').textContent = MEALNAME[activeMeal()];
+  const g = CT_GROUPS.find(x => x.k === ctCat);
+  const list = g ? ctItems(g.key) : [];
+  document.getElementById('ct-list').innerHTML = list.map(it => `
+    <div class="fitem" onclick="quickAdd('${esc(it.n).replace(/'/g,"\\'")}')">
+      <span class="l"><span class="n">${esc(it.n)}</span><span class="u">${it.u || '1份'}</span></span>
+      <span class="k">${it.k} kcal</span>
+    </div>`).join('');
+}
+function quickAdd(name){
+  const it = ctFind(name);
+  if (!it) return;
+  pickMeal = activeMeal();
+  askAmount({n:it.n, k:it.k, per:1, u:it.u});
+}
+
 /* ---- 记录页 ---- */
 function renderMeals(){
   const d = day();
@@ -566,7 +951,7 @@ function renderMeals(){
     </div>`;
   }).join('');
 }
-function fmtAmt(x){ return x.per===100 ? `${x.amt}g` : `${x.amt}份`; }
+function fmtAmt(x){ return (x.unit && x.amt===1) ? x.unit : (x.per===100 ? `${x.amt}g` : `${x.amt}份`); }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 function delFood(meal,i){ day()[meal].splice(i,1); save(); renderAll(); toast('已删除'); }
@@ -703,33 +1088,10 @@ function saveProfile(){
   save(); renderAll(); toast('已保存');
 }
 
-/* ---- 食物库页 ---- */
-let foodCat='全部';
-function renderFoodChips(){
-  document.getElementById('fchips').innerHTML = CATS.map(c=>
-    `<button class="${c===foodCat?'on':''}" onclick="foodCat='${c}';renderFoods()">${c}</button>`).join('');
-}
+/* ---- 可选食物：预置食物库 ＋ 自己加的 ---- */
 function allFoods(){ return FOODS.concat(DB.custom.map(c=>({n:c.n,k:c.k,per:c.per,c:c.c,mine:true}))); }
-function renderFoods(){
-  renderFoodChips();
-  const q=document.getElementById('fq').value.trim().toLowerCase();
-  let list=allFoods();
-  if(foodCat==='我的') list=list.filter(f=>f.mine);
-  else if(foodCat!=='全部') list=list.filter(f=>f.c===foodCat);
-  if(q) list=list.filter(f=>f.n.toLowerCase().includes(q));
 
-  document.getElementById('flist').innerHTML = list.length ? list.map(f=>`
-    <div class="fitem" onclick="pickFromLib('${esc(f.n).replace(/'/g,"\\'")}')">
-      <span class="l"><span class="n">${esc(f.n)}</span><span class="u">${f.per===100?'每 100 克':'每 1 份'}</span></span>
-      <span class="k">${f.k} kcal</span>
-    </div>`).join('') : '<div class="empty">没有匹配的食物</div>';
-}
-function pickFromLib(name){
-  const f=allFoods().find(x=>x.n===name); if(!f) return;
-  go('log'); openPick('lunch', f);
-}
-
-/* ---- 选食物弹层 ---- */
+/* ---- 选食物弹层（手动记录的兜底入口）---- */
 let pickMeal='lunch', pickCat='全部';
 function openPick(meal, preset){
   pickMeal=meal; pickCat='全部';
@@ -759,7 +1121,7 @@ function askAmountIdx(i){ askAmount(allFoods()[i]); }
 function askAmount(f){
   pending=f;
   document.getElementById('amt-name').textContent=f.n;
-  document.getElementById('amt-lbl').textContent = f.per===100 ? '份量（克）' : '份数';
+  document.getElementById('amt-lbl').textContent = f.per===100 ? '份量（克）' : (f.u ? `份数（${f.u}）` : '份数');
   const inp=document.getElementById('amt-val'); inp.value=f.per===100?100:1;
   updAmt(); inp.oninput=updAmt;
   openSheet('sh-amt');
@@ -770,14 +1132,14 @@ function updAmt(){
   const kcal = pending.per===100 ? pending.k*v/100 : pending.k*v;
   document.getElementById('amt-kcal').innerHTML =
     `约 <b style="color:var(--amber)">${Math.round(kcal)}</b> kcal` +
-    (pending.per===100 ? `（${pending.k} kcal / 100g）` : `（${pending.k} kcal / 份）`);
+    (pending.per===100 ? `（${pending.k} kcal / 100g）` : `（${pending.k} kcal / ${pending.u || '份'}）`);
 }
 function confirmAmount(){
   if(!pending) return;
   const v=num(document.getElementById('amt-val').value,0);
   if(v<=0){ toast('请输入有效份量'); return; }
   const kcal = pending.per===100 ? pending.k*v/100 : pending.k*v;
-  day()[pickMeal].push({name:pending.n, amt:v, per:pending.per, kcal});
+  day()[pickMeal].push({name:pending.n, unit:pending.u, amt:v, per:pending.per, kcal});
   save(); closeSheet('sh-amt'); closeSheet('sh-food'); renderAll();
   toast(`已添加 ${pending.n} · ${Math.round(kcal)} kcal`);
   pending=null;
@@ -832,7 +1194,7 @@ function confirmCustom(){
   const c=document.getElementById('c-cat').value;
   if(!n || k<=0){ toast('请填写名称和热量'); return; }
   DB.custom.push({n,k,per,c});
-  save(); closeSheet('sh-custom'); renderFoods(); toast('已加入食物库');
+  save(); closeSheet('sh-custom'); renderQuickPick(); renderPick(); toast('已加入食物库');
 }
 
 /* ---- 数据管理 ---- */
@@ -872,14 +1234,13 @@ function go(tab){
   document.getElementById('tab-'+tab).classList.add('on');
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on', b.dataset.tab===tab));
   if(tab==='body') setTimeout(renderBody,0);
-  if(tab==='food') renderFoods();
+  if(tab==='food'){ renderDayPlan(); renderQuickPick(); }
   window.scrollTo(0,0);
 }
 
 /* ---- 启动 ---- */
 window.addEventListener('resize', ()=>{ if(document.getElementById('tab-body').classList.contains('on')) drawChart([...DB.weights].sort((a,b)=>a.d<b.d?-1:1), DB.profile.target); });
 renderAll();
-renderFoods();
 </script>
 </body>
 </html>
